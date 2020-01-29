@@ -1,0 +1,2 @@
+var MAPS_API_KEY = '';
+var IP_GEOLOCATION_API_KEY = '';

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+  <script src="https://unpkg.com/axios@0.19.2/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/esri-leaflet@2.3.3/dist/esri-leaflet.js"></script>
+  <script src="https://unpkg.com/heatmapjs@2.0.2/heatmap.min.js"></script>
+  <script src="https://unpkg.com/leaflet-heatmap@1.0.0/leaflet-heatmap.js"></script>
+  <script src="https://unpkg.com/leaflet-realtime@2.2.0/dist/leaflet-realtime.min.js"></script>
+</head>
+
+<body>
+  <div id="map" style="width: 100%; height: 90vh;"></div>
+  <script>
+    let map, realtimeLayer, baseLayer, heatmapLayer;
+
+    const openSkyResponseToGeojson = states => {
+      const features = [];
+      for (let i = 0; i < states.length; i++) {
+        features.push({
+          type: 'Feature',
+          properties: {
+            id: states[i][0]
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [states[i][5], states[i][6]]
+          }
+        });
+      }
+      return {
+        type: 'FeatureCollection',
+        features: features
+      };
+    };
+
+    const getHeatmapData = states => {
+      const data = [];
+      for (let i = 0; i < states.length; i++) {
+        data.push({
+          lat: states[i][6],
+          lng: states[i][5],
+          count: 1
+        });
+      }
+      return {
+        min: 0,
+        max: data.length,
+        data: data
+      };
+    };
+
+    const realtimeSource = async(success, error) => {
+      try {
+        const results = await axios.get(
+          `https://opensky-network.org/api/states/all`
+        );
+        const featureCollection = openSkyResponseToGeojson(results.data.states);
+        heatmapLayer.setData(getHeatmapData(results.data.states));
+        success(featureCollection);
+      } catch (errorData) {
+        error(typeof errorData === 'string' ? errorData : errorData.toString());
+      }
+    };
+
+    baseLayer = L.esri.basemapLayer('Topographic');
+
+    heatmapLayer = new HeatmapOverlay({
+      radius: 0.8,
+      scaleRadius: true,
+      useLocalExtrema: true,
+      maxOpacity: 0.5
+    });
+
+    realtimeLayer = L.realtime(realtimeSource, {
+      interval: 5000,
+      pointToLayer: () => null
+    });
+
+    map = L.map('map', {
+      center: [40.434658, -3.778918],
+      zoom: 6,
+      layers: [baseLayer, realtimeLayer, heatmapLayer]
+    });
+  </script>
+</body>
+
+</html>

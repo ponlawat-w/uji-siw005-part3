@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/d3@5.15.0/dist/d3.min.js"></script>
+  </head>
+  <body>
+    <script>
+      const data = [5, 10, 15, 20, 25];
+
+      d3.select('body')
+        .style('background-color', '#222222')
+        .style('color', '#ffffff')
+        .selectAll().data(data) // Select data from `data`, iterate in `data` with `selectAll`
+        .enter()
+        .append('p')
+        .text(d => d)
+        .style('color', 'red');
+    </script>
+  </body>
+</html>

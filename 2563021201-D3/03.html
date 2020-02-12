@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/d3@5.15.0/dist/d3.min.js"></script>
+  </head>
+  <body>
+    <script>
+      const data = Array.from({length: 10}).map(() => Math.round(Math.random() * 10));
+
+      d3.select('body')
+        .selectAll().data(data)
+        .enter()
+        .append('div')
+        .text(d => d)
+        .style('color', d => d % 2 === 0 ? 'red' : 'blue');
+    </script>
+  </body>
+</html>

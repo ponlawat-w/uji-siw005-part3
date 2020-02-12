@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/d3@5.15.0/dist/d3.min.js"></script>
+    <style>
+      rect {
+        fill: seagreen;
+        stroke: none;
+      }
+
+      rect.highlight {
+        fill: purple;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const N = 30;
+      const width = 500;
+      const height = 500;
+
+      const data = Array.from({length: N}).map(() => Math.round(Math.random() * width)).sort((a, b) => b - a);
+      const mean = data.reduce((sum, curr) => sum + curr, 0) / data.length;
+
+      const xScale = d3.scaleLinear()
+        .domain([0, d3.max(data)])
+        .range([0, width]);
+
+      const yScaleBand = d3.scaleBand()
+        .domain(data)
+        .range([0, height])
+        .paddingInner(0.1);
+
+      const svg = d3.select('body')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+      let clicked = false;
+
+      svg.selectAll().data(data)
+        .enter()
+        .append('rect')
+        .classed('rect', true)
+        .attr('x', 0)
+        .attr('y', d => yScaleBand(d))
+        .style('width', d => xScale(d))
+        .style('height', yScaleBand.bandwidth())
+        .on('mouseover', function() {
+          d3.select(this).classed('highlight', true);
+        })
+        .on('mouseout', function() {
+          d3.select(this).classed('highlight', false);
+        })
+        .on('click', () => {
+          svg.selectAll('rect')
+            .transition()
+            .duration(500)
+            .delay((d, i) => i * 20)
+            .style('fill', clicked ? null : 'orange');
+          clicked = !clicked;
+        });
+      
+      svg.append('line')
+        .attr('x1', xScale(mean))
+        .attr('x2', xScale(mean))
+        .attr('y1', 0)
+        .attr('y2', height)
+        .style('stroke', 'red')
+        .style('stroke-width', '1px')
+        .style('stroke-dasharray', '5, 5');
+    </script>
+  </body>
+</html>

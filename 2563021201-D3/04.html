@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/d3@5.15.0/dist/d3.min.js"></script>
+  </head>
+  <body>
+    <script>
+      const N = 20;
+      const barHeight = 20;
+      const width = 500;
+
+      const height = barHeight * N;
+      const data = Array.from({length: N}).map(() => Math.round(Math.random() * width));
+      const mean = data.reduce((sum, curr) => sum + curr, 0) / data.length;
+
+      const svg = d3.select('body')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+      svg.selectAll().data(data)
+        .enter()
+        .append('rect')
+        .attr('x', 0)
+        .attr('y', (d, i) => i * barHeight)
+        .style('height', barHeight - 3)
+        .style('width', d => d)
+        .style('fill', 'seagreen')
+        .style('stroke', 'none');
+      
+      svg.append('line')
+        .attr('x1', mean)
+        .attr('x2', mean)
+        .attr('y1', 0)
+        .attr('y2', height)
+        .style('stroke', 'red')
+        .style('stroke-width', '1px')
+        .style('stroke-dasharray', '5, 5');
+    </script>
+  </body>
+</html>

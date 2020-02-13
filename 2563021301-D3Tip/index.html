@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/d3@5.15.0/dist/d3.min.js"></script>
+    <script src="https://unpkg.com/d3-tip@0.9.1/dist/index.js"></script>
+    <script src="config.js"></script>
+    <style>
+      rect {
+        stroke: none;
+      }
+
+      rect.highlight {
+        fill: seagreen;
+      }
+
+      .tooltip {
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #ffffff;
+        padding: 5px 10px;
+      }
+
+      .x-label {
+        text-anchor: middle;
+      }
+
+      .line {
+        fill: none;
+        stroke: red;
+        stroke-width: 5px;
+        stroke-dasharray: 10 5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="loading" style="text-align: center; margin-top: 5px;">
+      Loading Data…
+    </h1>
+    <script>
+      const cityId = 6356995;
+
+      const formatData = response => {
+        const allData = response.list
+          .map(x => ({...x, dt: new Date(x.dt_txt)}));
+        const hour = allData[0].dt.getHours();
+        const filteredData = allData.filter(x => x.dt.getHours() === hour);
+        return filteredData;
+      };
+
+      const getDate = d => `${d.dt.getDate().toString().padStart(2, '0')}`
+        + `/${(d.dt.getMonth() + 1).toString().padStart(2, '0')}`
+        + `/${d.dt.getFullYear().toString().substr(2)}`;
+
+      const init = async() => {
+        const response = await d3.json(
+          `https://api.openweathermap.org/data/2.5/forecast`
+          + `?id=${cityId}&units=metric&appid=${OPEN_WEATHER_MAP_API_KEY}`
+        );
+        d3.select('#loading')
+          .remove();
+
+        const data = formatData(response);
+
+        const width = 600;
+        const height = 500;
+
+        const chartHeight = height - 30;
+  
+        const xScaleBand = d3.scaleBand()
+          .domain(data.map(d => d.dt.getTime()))
+          .range([0, width])
+          .paddingInner(0.1);
+  
+        const yScale = d3.scaleLinear()
+          .domain([d3.min(data, d => d.main.temp), d3.max(data, d => d.main.temp)])
+          .range([chartHeight / 4, chartHeight - 30]);
+
+        const blueScale = d3.scalePow()
+          .domain([d3.min(data, d => d.main.temp), d3.max(data, d => d.main.temp)])
+          .range([20, 150]);
+
+        const getColor = d => `rgb(0, 0, ${blueScale(d.main.temp)})`;
+
+        const svg = d3.select('body')
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height);
+        
+        const line = d3.line()
+          .x(d => xScaleBand(d.dt.getTime()) + xScaleBand.bandwidth() / 2)
+          .y(d => chartHeight - yScale(d.main.temp));
+        
+        const tip = d3.tip()
+          .attr('class', 'tooltip')
+          .html(d => `${d.main.temp}℃`);
+        
+        svg.call(tip);
+  
+        svg.selectAll().data(data)
+          .enter()
+          .append('rect')
+          .classed('rect', true)
+          .attr('x', d => xScaleBand(d.dt.getTime()))
+          .attr('y', d => chartHeight - yScale(d.main.temp))
+          .style('width', xScaleBand.bandwidth())
+          .style('height', d => yScale(d.main.temp))
+          .style('fill', d => getColor(d))
+          .on('mouseover', function(d) {
+            d3.select(this).classed('highlight', true);
+            tip.show(d, this);
+          })
+          .on('mouseout', function(d) {
+            d3.select(this).classed('highlight', false);
+            tip.hide(d, this);
+          });
+
+        svg.append('path')
+          .data([data])
+          .classed('line', true)
+          .attr('d', line);
+        
+        svg.selectAll().data(data)
+          .enter()
+          .append('text')
+          .attr('x', d => xScaleBand(d.dt.getTime()) + xScaleBand.bandwidth() / 2)
+          .attr('y', d => chartHeight + 15)
+          .classed('x-label', true)
+          .text(d => getDate(d));
+      };
+
+      init();
+    </script>
+  </body>
+</html>
